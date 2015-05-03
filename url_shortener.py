@@ -2,11 +2,6 @@
 # -*- coding: utf-8 -*-
 
 
-__author__ = 'Rajendra Kumar Uppal'
-__date__ = ''
-__license__ = ''
-
-
 '''
 URL Shortener
 ===================
@@ -20,7 +15,21 @@ Unshorten:
 1. Take the encoded string from short URL
 2. Decode it and find its id
 3. Find its corresponding long URL in the database
+
+This program can be used both as a command line utility and a module. 
+Please see usage instructions in the README file of this repo at 
+https://github.com/rajendrauppal/url-shortener
 '''
+
+
+__author__ = "Rajendra Kumar Uppal"
+__copyright__ = "Copyright 2015, Rajendra Kumar Uppal"
+__credits__ = ["Michael Fogleman", "Rajendra Kumar Uppal"]
+__license__ = "MIT"
+__version__ = "0.1"
+__maintainer__ = "Rajendra Kumar Uppal"
+__email__ = "rajen.iitd@gmail.com"
+__status__ = "Production"
 
 
 import sys
