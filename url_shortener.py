@@ -95,33 +95,46 @@ class UrlEncoder(object):
         return result
 
 
-class UrlDatabase:
+class UrlDatabase(object):
 
     def __init__(self, dbname='postgres', dbuser='postgres', dbpassword='postgres'):
         _urlid = 1
         conn_str = "dbname='" + dbname + "' user='" + dbuser + "' password='" + dbpassword + "'"
-        self.conn = psycopg2.connect(conn_str)
+        try:
+            self.conn = psycopg2.connect(conn_str)
+        except psycopg2.DatabaseError, e:
+            if self.conn:
+                self.conn.rollback()
+            print "Error %s" % e
+            sys.exit(1)
         table_query = "CREATE TABLE Urls(id INTEGER PRIMARY KEY, long_url VARCHAR(80))"
         _execute_query(table_query)
 
     def __del__(self):
         if self.conn:
-            conn.close()
+            self.conn.close()
 
     def _execute_query(self, query):
-        cur = conn.cursor()
-        cur.execute(query)
-        self.conn.commit()
+        try:
+            cur = conn.cursor()
+            cur.execute(query)
+            self.conn.commit()
+        except psycopg2.DatabaseError, e:
+            if self.conn:
+                self.conn.rollback()
+            print "Error %s" % e
+            sys.exit(1)
 
     def insert(self, long_url):
         insert_query = "INSERT INTO Urls VALUES(" + str(_urlid) + ", " + long_url + ")"
         _execute_query(insert_query)
+        _urlid += 1
 
     def get(self):
         pass
 
 
-class UrlShortener:
+class UrlShortener(object):
 
     def __init__(self):
         pass
