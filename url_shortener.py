@@ -116,7 +116,7 @@ class UrlDatabase(object):
 
     def _execute_query(self, query):
         try:
-            cur = conn.cursor()
+            cur = self.conn.cursor()
             cur.execute(query)
             self.conn.commit()
         except psycopg2.DatabaseError, e:
@@ -130,19 +130,26 @@ class UrlDatabase(object):
         _execute_query(insert_query)
         _urlid += 1
 
-    def get(self):
-        pass
+    def get(self, id):
+        search_query = "SELECT * FROM Urls WHERE _urlid=id"
+        _execute_query(search_query)
 
 
 class UrlShortener(object):
 
     def __init__(self):
-        pass
+        self.url_encoder = UrlEncoder()
+        self.url_database = UrlDatabase()
 
-    def shorten(self):
-        pass
+    def shorten(self, long_url, prefix_url):
+        ''' Shortens long_url '''
+        encoded_url = self.url_encoder.encode_url(long_url)
+        self.url_database.insert(long_url)
+        short_url = prefix_url + encoded_url
+        return short_url
 
-    def unshorten(self):
+    def unshorten(self, short_url):
+        ''' Unshortens short_url '''
         pass
 
 
