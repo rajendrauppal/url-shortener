@@ -97,11 +97,25 @@ class UrlEncoder(object):
 
 class UrlDatabase:
 
-    def __init__(self):
-        pass
+    def __init__(self, dbname='postgres', dbuser='postgres', dbpassword='postgres'):
+        _urlid = 1
+        conn_str = "dbname='" + dbname + "' user='" + dbuser + "' password='" + dbpassword + "'"
+        self.conn = psycopg2.connect(conn_str)
+        table_query = "CREATE TABLE Urls(id INTEGER PRIMARY KEY, long_url VARCHAR(80))"
+        _execute_query(table_query)
 
-    def insert(self):
-        pass
+    def __del__(self):
+        if self.conn:
+            conn.close()
+
+    def _execute_query(self, query):
+        cur = conn.cursor()
+        cur.execute(query)
+        self.conn.commit()
+
+    def insert(self, long_url):
+        insert_query = "INSERT INTO Urls VALUES(" + str(_urlid) + ", " + long_url + ")"
+        _execute_query(insert_query)
 
     def get(self):
         pass
