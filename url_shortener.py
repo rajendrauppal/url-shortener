@@ -33,6 +33,7 @@ __status__ = "Production"
 
 
 import sys
+import psycopg2 # Python binding module to interface with PostgreSQL
 
 
 DEFAULT_ALPHABET = 'mn6j2c4rv8bpygw95z7hsdaetxuk3fq'
@@ -95,11 +96,27 @@ class UrlEncoder(object):
 
 
 class UrlDatabase:
-    pass
+
+    def __init__(self):
+        pass
+
+    def insert(self):
+        pass
+
+    def get(self):
+        pass
 
 
 class UrlShortener:
-    pass
+
+    def __init__(self):
+        pass
+
+    def shorten(self):
+        pass
+
+    def unshorten(self):
+        pass
 
 
 def usage():
@@ -126,6 +143,7 @@ def main():
             sys.exit(1)
     else:
         usage()
+        sys.exit(1)
 
     
 if __name__ == '__main__':
