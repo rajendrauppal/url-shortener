@@ -118,29 +118,56 @@ class UrlDatabase(object):
     def insert(self, long_url):
         num_rows = self.get_row_count() + 1
         insert_query = "INSERT INTO Urls VALUES(" + str(num_rows) + ", " + long_url + ")"
-        cur = self.conn.cursor()
-        cur.execute(insert_query)
-        self.conn.commit()
+        try:
+            cur = self.conn.cursor()
+            cur.execute(insert_query)
+            self.conn.commit()
+        except (psycopg2.DatabaseError, psycopg2.IntegrityError) as e:
+            if self.conn:
+                self.conn.rollback()
+            print "Error %s" % e
+            sys.exit(1)
 
     def get_url(self, id):
         search_query = "SELECT * FROM Urls WHERE urlid=id"
-        cur = self.conn.cursor()
-        cur.execute(search_query)
-        rows = cur.fetchall()
+        try:
+            cur = self.conn.cursor()
+            cur.execute(search_query)
+            rows = cur.fetchall()
+        except (psycopg2.DatabaseError, psycopg2.IntegrityError) as e:
+            if self.conn:
+                self.conn.rollback()
+            print "Error %s" % e
+            sys.exit(1)            
+
         return rows
 
     def get_id(self, url):
         search_query = "SELECT * FROM Urls WHERE long_url=" + url
-        cur = self.conn.cursor()
-        cur.execute(search_query)
-        rows = cur.fetchall()
+        try:
+            cur = self.conn.cursor()
+            cur.execute(search_query)
+            rows = cur.fetchall()
+        except (psycopg2.DatabaseError, psycopg2.IntegrityError) as e:
+            if self.conn:
+                self.conn.rollback()
+            print "Error %s" % e
+            sys.exit(1)
+
         return rows[0][0]
 
     def get_row_count(self):
         search_query = "SELECT * FROM Urls"
-        cur = self.conn.cursor()
-        cur.execute(search_query)
-        rows = cur.fetchall()
+        try:
+            cur = self.conn.cursor()
+            cur.execute(search_query)
+            rows = cur.fetchall()
+        except (psycopg2.DatabaseError, psycopg2.IntegrityError) as e:
+            if self.conn:
+                self.conn.rollback()
+            print "Error %s" % e
+            sys.exit(1)
+
         return len(rows)
 
 
@@ -154,7 +181,6 @@ class UrlShortener(object):
         ''' Shortens long_url '''
         self.url_database.insert(long_url)
         urlid = self.url_database.get_id(long_url)
-        print urlid
         encoded_url = self.url_encoder.encode_url(urlid)
         while prefix_url.endswith('/'):
             prefix_url = prefix_url[:-1]
@@ -198,14 +224,16 @@ def main():
         action = sys.argv[3]
         #drop_table("Urls")
         urlshortener = UrlShortener()
+        result = ''
         if action == "ENCODE":
-            print urlshortener.shorten(input_url, prefix_url)
+            result = urlshortener.shorten(input_url, prefix_url)
         elif action == "DECODE":
-            print urlshortener.unshorten(input_url)
+            result = urlshortener.unshorten(input_url)
         else:
             print "Invalid action! Allowed actions are: ENCODE, DECODE"
             print "Exiting..."
             sys.exit(1)
+        print result
     else:
         usage()
         sys.exit(1)
