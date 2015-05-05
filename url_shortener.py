@@ -97,27 +97,21 @@ class UrlEncoder(object):
 
 class UrlDatabase(object):
 
-    def __init__(self, dbname='postgres', dbuser='postgres', dbpassword='postgres'):
-        _urlid = 1
+    urlid = 1
+    
+    def __init__(self, dbname='postgres', dbuser='postgres', dbpassword='postgres'):    
         conn_str = "dbname='" + dbname + "' user='" + dbuser + "' password='" + dbpassword + "'"
         try:
             self.conn = psycopg2.connect(conn_str)
-        except psycopg2.DatabaseError, e:
-            if self.conn:
-                self.conn.rollback()
-            print "Error %s" % e
-            sys.exit(1)
-        table_query = "CREATE TABLE Urls(id INTEGER PRIMARY KEY, long_url VARCHAR(80))"
-        _execute_query(table_query)
-
-    def __del__(self):
-        if self.conn:
-            self.conn.close()
-
-    def _execute_query(self, query):
-        try:
             cur = self.conn.cursor()
-            cur.execute(query)
+
+            # create a new Urls table everytime the program runs.
+            # delete if already exists.
+            drop_query = "DROP TABLE IF EXISTS Urls"
+            cur.execute(drop_query)
+            self.conn.commit()
+            table_query = "CREATE TABLE Urls(id INTEGER PRIMARY KEY, long_url VARCHAR(80))"
+            cur.execute(table_query)
             self.conn.commit()
         except psycopg2.DatabaseError, e:
             if self.conn:
@@ -125,14 +119,32 @@ class UrlDatabase(object):
             print "Error %s" % e
             sys.exit(1)
 
-    def insert(self, long_url):
-        insert_query = "INSERT INTO Urls VALUES(" + str(_urlid) + ", " + long_url + ")"
-        _execute_query(insert_query)
-        _urlid += 1
+    def __del__(self):
+        if self.conn:
+            self.conn.close()
 
-    def get(self, id):
-        search_query = "SELECT * FROM Urls WHERE _urlid=id"
-        _execute_query(search_query)
+    def insert(self, long_url):
+        print long_url
+        insert_query = "INSERT INTO Urls VALUES(" + str(self.urlid) + ", " + long_url + ")"
+        cur = self.conn.cursor()
+        cur.execute(insert_query)
+        self.conn.commit()
+        self.urlid += 1
+
+    def get_url(self, id):
+        search_query = "SELECT * FROM Urls WHERE urlid=id"
+        cur = self.conn.cursor()
+        cur.execute(search_query)
+        rows = cur.fetchall()
+        return rows
+
+    def get_id(self, url):
+        print url
+        search_query = "SELECT * FROM Urls WHERE long_url=" + url
+        cur = self.conn.cursor()
+        cur.execute(search_query)
+        rows = cur.fetchall()
+        return rows[0][0]
 
 
 class UrlShortener(object):
@@ -143,9 +155,13 @@ class UrlShortener(object):
 
     def shorten(self, long_url, prefix_url):
         ''' Shortens long_url '''
-        encoded_url = self.url_encoder.encode_url(long_url)
         self.url_database.insert(long_url)
-        short_url = prefix_url + encoded_url
+        urlid = self.url_database.get_id(long_url)
+        print urlid
+        encoded_url = self.url_encoder.encode_url(urlid)
+        while prefix_url.endswith('/'):
+            prefix_url = prefix_url[:-1]
+        short_url = prefix_url + '/' + encoded_url
         return short_url
 
     def unshorten(self, short_url):
@@ -155,22 +171,23 @@ class UrlShortener(object):
 
 def usage():
     print "Usage: Requires command line arguments."
-    print "python url_shortener.py <input_url> <action>"
+    print "python url_shortener.py <input_url> <prefix_url> <action>"
     print "Example:"
-    print "Encode: python url_shortener.py https://github.com/rajendrauppal/url-shortener ENCODE"
-    print "Encode: python url_shortener.py https://gt.co/rner DECODE"
+    print "Encode: python url_shortener.py http://github.com/rajendrauppal/url-shortener http://t.co ENCODE"
+    print "Encode: python url_shortener.py http://t.co/RjJw DECODE"
 
 
 def main():
     num_args = len(sys.argv)
-    if num_args == 3:
-        input_url = sys.argv[1]
-        action = sys.argv[2]
-        urlshortener = UrlEncoder()
+    if num_args == 4:
+        input_url = "'" + sys.argv[1] + "'"
+        prefix_url = sys.argv[2]
+        action = sys.argv[3]
+        urlshortener = UrlShortener()
         if action == "ENCODE":
-            urlshortener.encode_url(input_url)
+            print urlshortener.shorten(input_url, prefix_url)
         elif action == "DECODE":
-            urlshortener.decode_url(input_url)
+            print urlshortener.unshorten(input_url)
         else:
             print "Invalid action! Allowed actions are: ENCODE, DECODE"
             print "Exiting..."
