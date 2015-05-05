@@ -96,24 +96,16 @@ class UrlEncoder(object):
 
 
 class UrlDatabase(object):
-
-    urlid = 1
     
     def __init__(self, dbname='postgres', dbuser='postgres', dbpassword='postgres'):    
         conn_str = "dbname='" + dbname + "' user='" + dbuser + "' password='" + dbpassword + "'"
         try:
             self.conn = psycopg2.connect(conn_str)
             cur = self.conn.cursor()
-
-            # create a new Urls table everytime the program runs.
-            # delete if already exists.
-            drop_query = "DROP TABLE IF EXISTS Urls"
-            cur.execute(drop_query)
-            self.conn.commit()
-            table_query = "CREATE TABLE Urls(id INTEGER PRIMARY KEY, long_url VARCHAR(80))"
+            table_query = "CREATE TABLE IF NOT EXISTS Urls(id serial, long_url VARCHAR(80) PRIMARY KEY)"
             cur.execute(table_query)
             self.conn.commit()
-        except psycopg2.DatabaseError, e:
+        except (psycopg2.DatabaseError, psycopg2.IntegrityError) as e:
             if self.conn:
                 self.conn.rollback()
             print "Error %s" % e
@@ -124,12 +116,11 @@ class UrlDatabase(object):
             self.conn.close()
 
     def insert(self, long_url):
-        print long_url
-        insert_query = "INSERT INTO Urls VALUES(" + str(self.urlid) + ", " + long_url + ")"
+        num_rows = self.get_row_count() + 1
+        insert_query = "INSERT INTO Urls VALUES(" + str(num_rows) + ", " + long_url + ")"
         cur = self.conn.cursor()
         cur.execute(insert_query)
         self.conn.commit()
-        self.urlid += 1
 
     def get_url(self, id):
         search_query = "SELECT * FROM Urls WHERE urlid=id"
@@ -139,12 +130,18 @@ class UrlDatabase(object):
         return rows
 
     def get_id(self, url):
-        print url
         search_query = "SELECT * FROM Urls WHERE long_url=" + url
         cur = self.conn.cursor()
         cur.execute(search_query)
         rows = cur.fetchall()
         return rows[0][0]
+
+    def get_row_count(self):
+        search_query = "SELECT * FROM Urls"
+        cur = self.conn.cursor()
+        cur.execute(search_query)
+        rows = cur.fetchall()
+        return len(rows)
 
 
 class UrlShortener(object):
@@ -169,6 +166,22 @@ class UrlShortener(object):
         pass
 
 
+def drop_table(table_name):
+    conn_str = "dbname='postgres' user='postgres' password='postgres'"
+    conn = None
+    try:
+        conn = psycopg2.connect(conn_str)
+        cur = conn.cursor()
+        table_query = "DROP TABLE IF EXISTS " + table_name
+        cur.execute(table_query)
+        conn.commit()
+    except (psycopg2.DatabaseError, psycopg2.IntegrityError) as e:
+        if conn:
+            conn.rollback()
+        print "Error %s" % e
+        sys.exit(1)
+
+
 def usage():
     print "Usage: Requires command line arguments."
     print "python url_shortener.py <input_url> <prefix_url> <action>"
@@ -183,6 +196,7 @@ def main():
         input_url = "'" + sys.argv[1] + "'"
         prefix_url = sys.argv[2]
         action = sys.argv[3]
+        #drop_table("Urls")
         urlshortener = UrlShortener()
         if action == "ENCODE":
             print urlshortener.shorten(input_url, prefix_url)
