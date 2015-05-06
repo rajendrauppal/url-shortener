@@ -34,6 +34,7 @@ __status__ = "Production"
 
 import sys
 import psycopg2 # Python binding module to interface with PostgreSQL
+import argparse
 
 
 DEFAULT_ALPHABET = 'mn6j2c4rv8bpygw95z7hsdaetxuk3fq'
@@ -212,35 +213,33 @@ def drop_table(table_name):
         sys.exit(1)
 
 
-def usage():
-    print "Usage: Requires command line arguments."
-    print "python url_shortener.py <input_url> <prefix_url> <action>"
-    print "Example:"
-    print "Encode: python url_shortener.py http://github.com/rajendrauppal/url-shortener http://t.co ENCODE"
-    print "Encode: python url_shortener.py http://t.co/RjJw DECODE"
-
-
 def main():
-    num_args = len(sys.argv)
-    if num_args == 4:
-        input_url = "'" + sys.argv[1] + "'"
-        prefix_url = sys.argv[2]
-        action = sys.argv[3]
-        #drop_table("Urls")
-        urlshortener = UrlShortener()
-        result = ''
-        if action == "ENCODE":
-            result = urlshortener.shorten(input_url, prefix_url)
-        elif action == "DECODE":
-            result = urlshortener.unshorten(input_url)
-        else:
-            print "Invalid action! Allowed actions are: ENCODE, DECODE"
-            print "Exiting..."
-            sys.exit(1)
-        print result
+    arg_parser = argparse.ArgumentParser(description='Enter command line arguments.')
+    arg_parser.add_argument('-l', '--long_url', help='Enter long URL which you want to shorten.')
+    arg_parser.add_argument('-p', '--prefix_url', help='Enter URL prefix which you want to append encoded URL to.')
+    arg_parser.add_argument('-s', '--short_url', help='Enter short URL which you want to unshorten.')
+    args = arg_parser.parse_args()
+
+    (long_url, prefix_url, short_url) = (args.long_url, args.prefix_url, args.short_url)
+    if long_url:
+        long_url = "'" + long_url + "'"
+
+    #drop_table("Urls")
+
+    urlshortener = UrlShortener()
+    result = ''
+    if long_url and prefix_url and not short_url:
+        # i.e. shorten
+        result = urlshortener.shorten( long_url, prefix_url )
+    elif short_url and not long_url and not prefix_url:
+        # i.e. unshorten
+        result = urlshortener.unshorten( short_url )
     else:
-        usage()
+        print "Invalid command line arguments!"
+        print "Execute python url_shortener.py -h or --help to see help"
+        print "Exiting..."
         sys.exit(1)
+    print result
 
     
 if __name__ == '__main__':
