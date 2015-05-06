@@ -129,7 +129,7 @@ class UrlDatabase(object):
             sys.exit(1)
 
     def get_url(self, id):
-        search_query = "SELECT * FROM Urls WHERE urlid=id"
+        search_query = "SELECT * FROM Urls WHERE id=" + str(id)
         try:
             cur = self.conn.cursor()
             cur.execute(search_query)
@@ -140,7 +140,7 @@ class UrlDatabase(object):
             print "Error %s" % e
             sys.exit(1)            
 
-        return rows
+        return rows[0][1]
 
     def get_id(self, url):
         search_query = "SELECT * FROM Urls WHERE long_url=" + url
@@ -189,7 +189,11 @@ class UrlShortener(object):
 
     def unshorten(self, short_url):
         ''' Unshortens short_url '''
-        pass
+        url_parts = short_url.rstrip('/\'').split('/')
+        encoded_url = url_parts[len(url_parts) - 1].rstrip('/\\\'')
+        decoded_id = self.url_encoder.decode_url(encoded_url)
+        long_url = self.url_database.get_url(decoded_id)
+        return long_url
 
 
 def drop_table(table_name):
