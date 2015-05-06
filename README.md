@@ -16,6 +16,29 @@ Tools:
 
 You can use this application both as a module and as a command line utility.
 
-#### As a module
+##### As a module
+```python
+import url_shortener
+urlshortener = UrlShortener()
+short_url = urlshortener.shorten("http://google.com/rajenrauppal", 'http://bit.ly/')
+print short_url
+long_url = urlshortener.unshorten(short_url)
+print long_url
+```
 
-#### As command line utility
+##### As command line utility
+
+Run following command for help
+```
+$ python url_shortener.py -h or --help
+```
+
+Shorten:
+```
+$ python url_shortener.py -l "http://google.co.in/uppal" -p "http://yor.co"
+```
+
+Un-shorten:
+```
+$ python url_shortener.py -s "http://yor.co/6cs8t"
+```
