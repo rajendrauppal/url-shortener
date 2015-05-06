@@ -180,6 +180,7 @@ class UrlShortener(object):
 
     def shorten(self, long_url, prefix_url):
         ''' Shortens long_url '''
+        long_url = "'" + long_url + "'"
         self.url_database.insert(long_url)
         urlid = self.url_database.get_id(long_url)
         encoded_url = self.url_encoder.encode_url(urlid)
@@ -213,6 +214,14 @@ def drop_table(table_name):
         sys.exit(1)
 
 
+def test_module():
+    urlshortener = UrlShortener()
+    short_url = urlshortener.shorten("http://google.com/rajenrauppal", 'http://bit.ly/')
+    print short_url
+    long_url = urlshortener.unshorten(short_url)
+    print long_url
+
+
 def main():
     arg_parser = argparse.ArgumentParser(description='Enter command line arguments.')
     arg_parser.add_argument('-l', '--long_url', help='Enter long URL which you want to shorten.')
@@ -221,8 +230,6 @@ def main():
     args = arg_parser.parse_args()
 
     (long_url, prefix_url, short_url) = (args.long_url, args.prefix_url, args.short_url)
-    if long_url:
-        long_url = "'" + long_url + "'"
 
     #drop_table("Urls")
 
